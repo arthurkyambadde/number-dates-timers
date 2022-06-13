@@ -81,20 +81,31 @@ const inputClosePin = document.querySelector('.form__input--pin');
 /////////////////////////////////////////////////
 // Functions
 
-const displayMovements = function (movements, sort = false) {
+const displayMovements = function (acc, sort = false) {
   containerMovements.innerHTML = '';
 
-  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
+  const movs = sort
+    ? acc.movements.slice().sort((a, b) => a - b)
+    : acc.movements;
 
   movs.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
+
+    const date = new Date(acc.movementsDates[i]);
+    const day = `${date.getDate()}`.padStart(2, 0);
+    const month = `${date.getMonth() + 1}`.padStart(2, 0);
+    const year = date.getFullYear();
+    const displayDate = `${day}/${month}/${year}`;
 
     const html = `
       <div class="movements__row">
         <div class="movements__type movements__type--${type}">${
       i + 1
     } ${type}</div>
-        <div class="movements__value">${mov}€</div>
+
+      <div class="movements__date"> ${displayDate} </div>
+
+        <div class="movements__value">${mov.toFixed(2)}€</div>
       </div>
     `;
 
@@ -104,19 +115,19 @@ const displayMovements = function (movements, sort = false) {
 
 const calcDisplayBalance = function (acc) {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${acc.balance}€`;
+  labelBalance.textContent = `${acc.balance.toFixed(2)}€`;
 };
 
 const calcDisplaySummary = function (acc) {
   const incomes = acc.movements
     .filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumIn.textContent = `${incomes}€`;
+  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
 
   const out = acc.movements
     .filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumOut.textContent = `${Math.abs(out)}€`;
+  labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€`;
 
   const interest = acc.movements
     .filter(mov => mov > 0)
@@ -126,7 +137,7 @@ const calcDisplaySummary = function (acc) {
       return int >= 1;
     })
     .reduce((acc, int) => acc + int, 0);
-  labelSumInterest.textContent = `${interest}€`;
+  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
 };
 
 const createUsernames = function (accs) {
@@ -142,7 +153,7 @@ createUsernames(accounts);
 
 const updateUI = function (acc) {
   // Display movements
-  displayMovements(acc.movements);
+  displayMovements(acc);
 
   // Display balance
   calcDisplayBalance(acc);
@@ -155,9 +166,40 @@ const updateUI = function (acc) {
 // Event handlers
 let currentAccount;
 
+//FAKE LOGIN
+currentAccount = account1;
+updateUI(currentAccount);
+containerApp.style.opacity = 100;
+
+//day/month/year
+
 btnLogin.addEventListener('click', function (e) {
   // Prevent form from submitting
   e.preventDefault();
+  const now = new Date();
+  const options = {
+    hours: 'numeric',
+    minute: 'numeric',
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    // weekday: 'long',
+  };
+
+  // const locale = navigator.language;
+
+  labelDate.textContent = new Intl.DateTimeFormat(
+    currentAccount.locale,
+    options
+  ).format(now);
+
+  // const day = `${now.getDate()}`.padStart(2, 0);
+  // const month = `${now.getMonth() + 1}`.padStart(2, 0);
+  // const year = now.getFullYear();
+  // const hour = `${now.getHours()}`.padStart(2, 0);
+  // const minutes = `${now.getMinutes()}`.padStart(2, 0);
+
+  // labelDate.textContent = `${day}/${month}/${year}, ${hour}: ${minutes}`;
 
   currentAccount = accounts.find(
     acc => acc.username === inputLoginUsername.value
@@ -198,6 +240,10 @@ btnTransfer.addEventListener('click', function (e) {
     currentAccount.movements.push(-amount);
     receiverAcc.movements.push(amount);
 
+    //add transfer date
+    currentAccount.movementsDates.push(now);
+    receiverAcc.movementsDates.push(now);
+
     // Update UI
     updateUI(currentAccount);
   }
@@ -206,11 +252,14 @@ btnTransfer.addEventListener('click', function (e) {
 btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
 
-  const amount = +inputLoanAmount.value;
+  const amount = Math.floor(inputLoanAmount.value);
 
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
     // Add movement
     currentAccount.movements.push(amount);
+
+    //update date
+    currentAccount.movementsDates.push(now);
 
     // Update UI
     updateUI(currentAccount);
@@ -251,10 +300,100 @@ btnSort.addEventListener('click', function (e) {
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-console.log(23 === 23.0);
+// console.log(23 === 23.0);
 
-//Numbers in javascript
-//  parsing
-console.log(Number.parseInt('30px')); //its converted to a number
-console.log(Number.parseInt('px30')); //not converted to number
-//number is supposed to be first
+// //Numbers in javascript
+// //  parsing
+// console.log(Number.parseInt('30px')); //its converted to a number
+// console.log(Number.parseInt('px30')); //not converted to number
+// //number is supposed to be first
+
+// console.log(Number.parseFloat('2.6rem'));
+// console.log(Number.parseInt('2.4333px'));
+
+// //check if its not a number
+// console.log(Number.isNaN(20));
+// console.log(Number.isNaN('20'));
+// console.log(Number.isNaN(+'20x'));
+
+// //check if value is a number
+// console.log(Number.isFinite(20));
+// console.log(Number.isFinite('20'));
+
+// //squareroot
+
+// console.log(Math.sqrt(25)); //or
+// console.log(2 ** 1 / 2);
+
+// //find maximum value
+// console.log(Math.max(1, 3, 6, 3, 5, 45, 23, 11, 23));
+// //it does type coercion but does not convert strings to number
+// console.log(Math.max(1, 3, 6, 3, 5, '45', 23, 11, 23));
+// console.log(Math.max(1, 3, 6, 3, 5, '45', 23, 11, 23));
+// //min
+// console.log(Math.min(1, 3, 6, 3, 5, '45', 23, 11, 23));
+// console.log(Math.min(1, 3, 6, 3, 5, '45', 23, 11, 23));
+
+// //calculate radius of acircle
+// console.log(Math.PI * Number.parseFloat('5px') ** 2);
+
+//remove decimal places
+// console.log(Math.trunc(23.32));
+// console.log(Math.trunc(23.32));
+
+//rounf off to the nearest integer
+// console.log(Math.round(2.9));
+// console.log(Math.round(2.5));
+
+//round up
+// console.log(Math.ceil(2.7));
+// console.log(Math.ceil(2.2));
+
+//round down
+// console.log(Math.floor(2.2));
+// console.log(Math.floor(2.2));
+
+//rounding decimals
+//result is a string
+// console.log((2.3).toFixed(0));
+// console.log((2.3).toFixed(1)); //convert to number by adding +
+// console.log(+(2.3).toFixed(2));
+// console.log(+(2.3).toFixed(3));
+
+//remainder operator
+
+// console.log(5 % 2);
+// console.log(8 % 3);
+
+//check if even or odd
+
+//for even
+// console.log(6 % 2 === 0);
+
+//for odd
+// console.log(7 % 2 === 1);
+
+// labelBalance.addEventListener('click', function () {
+//   [...document.querySelectorAll('.movements__row')].forEach(function (row, i) {
+//     if (i % 2 === 0) {
+//       row.style.backgroundColor = 'orangered';
+//     }
+//   });
+// });
+
+//BITINT for bigintegers
+//64bits but 53bits to store a number
+
+// console.log(2 ** 53 - 1);
+// console.log(Number.MAX_SAFE_INTEGER);
+
+// console.log(7474864648486486430846648046n);
+//or
+// console.log(BigInt(7474864648486486430846648046));
+
+//DATES AND TIME
+
+// const now = new Date();
+// console.log(now);
+
+// console.log(new Date('2019-11-10'));
